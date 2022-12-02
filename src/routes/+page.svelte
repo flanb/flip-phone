@@ -95,7 +95,7 @@
 			}
 			titleElement.textContent = titleText
 			infoElement.textContent = infoText
-		}, 100 )
+		}, 100)
 	}
 
 	function randomZoom () {
@@ -138,7 +138,19 @@
 	}
 
 	function init () {
-		document.documentElement.requestFullscreen()
+		//request fullscreen on iphone
+		// document.documentElement.webkitRequestFullscreen()
+		// document.documentElement.requestFullscreen()
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen()
+    } else if (document.documentElement.mozRequestFullScreen) { /* Firefox */
+      document.documentElement.mozRequestFullScreen()
+    } else if (document.documentElement.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+      document.documentElement.webkitRequestFullscreen()
+    } else if (document.documentElement.msRequestFullscreen) { /* IE/Edge */
+      document.documentElement.msRequestFullscreen()
+    }
+
 		addEventListener("touchstart", preventZoom, { passive: false })
 		orientationPermission = true
 
@@ -146,7 +158,6 @@
 		document.documentElement.style.setProperty("--random-zoom", "1")
 		document.documentElement.style.setProperty("--random-translate-x", "0px")
 		document.documentElement.style.setProperty("--random-translate-y", "0px")
-
 	}
 
 	onDestroy(() => {

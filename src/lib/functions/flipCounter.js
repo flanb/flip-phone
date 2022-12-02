@@ -14,9 +14,9 @@ function handleFlip() {
   flipCount++;
   isFlat = false;
   clearTimeout(setScoreTimeout);
-  stopScoringTimeout = setTimeout(() => {
-    flipCount = 0;
-  }, 1000);
+  // stopScoringTimeout = setTimeout(() => {
+  //   flipCount = 0;
+  // }, 500);
 }
 
 function handleStopFlip() {
@@ -35,11 +35,11 @@ export function getBeta() {
 export default function handleOrientation(event) {
   beta = event.beta;
 
-  if ((beta >= 120 || beta <= -120) && isFlat) {
+  if ((beta >= 160 || beta <= -160) && isFlat) {
     handleFlip();
   }
 
-  if (beta <= 60 && beta >= -60 && !isFlat) {
+  if (beta <= 20 && beta >= -20 && !isFlat) {
     handleStopFlip();
   }
 }
