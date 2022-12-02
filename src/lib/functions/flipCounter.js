@@ -16,7 +16,7 @@ function handleFlip() {
   clearTimeout(setScoreTimeout);
   stopScoringTimeout = setTimeout(() => {
     flipCount = 0;
-  }, 500);
+  }, 1000);
 }
 
 function handleStopFlip() {

@@ -1,58 +1,223 @@
 <script>
 	import Button from "$lib/components/Button.svelte"
 	import deviceOrientationPermission from "$lib/functions/deviceOrientationPermission.js"
-	import handleOrientation, {  getScore } from "$lib/functions/flipCounter.js"
-	import { onMount } from "svelte"
+	import handleOrientation, { getScore } from "$lib/functions/flipCounter.js"
+	import { onDestroy } from "svelte"
 
 	let errorMessage = ""
 	let orientationPermission = false
 	let score = 0
+	let diff = 0
+	let scoreContainer = null
+	let titleElement = null
+	let infoElement = null
+	let getScoreInterval = null
+
+	let randomColorAnimationStarted = false
+	let randomCharacterAnimationStarted = false
+	let randomZoomAnimationStarted = false
+	let randomRotateAnimationStarted = false
+	let randomBackgroundAnimationStarted = false
+	let randomTranslateAnimationStarted = false
 
 	function handleStartClick () {
 		deviceOrientationPermission(handleOrientation).then(() => {
-			orientationPermission = true
+			init()
+
+			scoreContainer.classList.remove("score-animation")
+			getScoreInterval = setInterval(() => {
+				if (score !== getScore()) {
+					diff = getScore() - score
+					const randomPLusRotate = Math.floor(Math.random() * 60) - 30
+					scoreContainer.style.setProperty("--random-plus-rotate", randomPLusRotate + "deg")
+					scoreContainer.classList.add("score-animation")
+					setTimeout(() => {
+						diff = 0
+						scoreContainer.classList.remove("score-animation")
+					}, 1000)
+
+					if (!randomCharacterAnimationStarted && score >= 2) {
+						randomCharacter()
+						randomCharacterAnimationStarted = true
+					}
+
+					if (!randomColorAnimationStarted && score >= 5) {
+						randomColor()
+						randomColorAnimationStarted = true
+					}
+
+					if (!randomZoomAnimationStarted && score >= 8) {
+						randomZoom()
+						randomRotate()
+
+						randomZoomAnimationStarted = true
+						randomRotateAnimationStarted = true
+					}
+
+					if (!randomBackgroundAnimationStarted && score >= 10) {
+						randomBackground()
+						randomBackgroundAnimationStarted = true
+					}
+
+					if (!randomTranslateAnimationStarted && score >= 3) {
+						randomTranslate()
+						randomTranslateAnimationStarted = true
+					}
+
+				}
+				score = getScore()
+			}, 100)
+
 		}).catch((error) => {
 			errorMessage = error
 		})
 	}
 
-	onMount(() => {
-		addEventListener("touchstart", (event) => {
-			if (event.touches.length > 1) event.preventDefault()
-		}, { passive: false })
+	function randomColor () {
+		setInterval(() => {
+			const randomColor = Math.floor(Math.random() * 16777215).toString(16)
+			document.documentElement.style.setProperty("--random-color", "#" + randomColor)
+		}, 200)
+	}
+
+	function randomCharacter () {
+		const characters = "abcdefghijklmnopqrstuvwxyz"
+		const titleLength = titleElement.textContent.length
+		const infoLength = infoElement.textContent.length
+		setInterval(() => {
+			let titleText = ""
+			let infoText = ""
+			for (let i = 0; i < titleLength; i++) {
+				titleText += characters.charAt(Math.floor(Math.random() * characters.length))
+			}
+			for (let i = 0; i < infoLength; i++) {
+				infoText += characters.charAt(Math.floor(Math.random() * characters.length))
+			}
+			titleElement.textContent = titleText
+			infoElement.textContent = infoText
+		}, 100 )
+	}
+
+	function randomZoom () {
+		setInterval(() => {
+			const randomZoom = Math.random() * 3
+			document.documentElement.style.setProperty("--random-zoom", randomZoom.toString())
+		}, 400)
+	}
+
+	function randomRotate () {
+		setInterval(() => {
+			const randomRotate = Math.floor(Math.random() * 60) - 30
+			document.documentElement.style.setProperty("--random-rotate", randomRotate + "deg")
+		}, 200)
+	}
+
+	function randomTranslate () {
+		setInterval(() => {
+			const randomTranslateX = Math.floor(Math.random() * 100) - 50
+			const randomTranslateY = Math.floor(Math.random() * 100) - 50
+			document.documentElement.style.setProperty("--random-translate-x", randomTranslateX + "px")
+			document.documentElement.style.setProperty("--random-translate-y", randomTranslateY + "px")
+		}, 100)
+	}
+
+	function randomBackground () {
+		// random gradient background
+		setInterval(() => {
+			const randomColor1 = Math.floor(Math.random() * 16777215).toString(16)
+			const randomColor2 = Math.floor(Math.random() * 16777215).toString(16)
+			const randomDeg = Math.floor(Math.random() * 360)
+			const randomGradientType = Math.floor(Math.random() * 2) === 0 ? "linear-gradient" : "radial-gradient"
+			document.documentElement.style.setProperty("--random-background", `${randomGradientType}(${randomDeg}deg, #${randomColor1}, #${randomColor2})`)
+
+		}, 200)
+	}
+
+	function preventZoom (event) {
+		event.preventDefault()
+	}
+
+	function init () {
+		document.documentElement.requestFullscreen()
+		addEventListener("touchstart", preventZoom, { passive: false })
+		orientationPermission = true
+
+		document.documentElement.style.setProperty("--random-rotate", "0deg")
+		document.documentElement.style.setProperty("--random-zoom", "1")
+		document.documentElement.style.setProperty("--random-translate-x", "0px")
+		document.documentElement.style.setProperty("--random-translate-y", "0px")
+
+	}
+
+	onDestroy(() => {
+		clearInterval(getScoreInterval)
 	})
-
-	const interval = setInterval(() => {
-		score = getScore()
-	}, 100)
-
 
 </script>
 
-<svelte:head>
-  <title>Home</title>
-  <meta content="Flip phone, the best game of the universe" name="description"/>
-</svelte:head>
-
-{#if orientationPermission}
-  <h1>Score: {score}</h1>
-
-{:else}
-  <div class="home">
-    <h1>Flip Phone</h1>
-    <div>
-      <Button on:click={handleStartClick}>Start</Button>
-      <p>{errorMessage}</p>
-    </div>
+<div class="home">
+  <h1 bind:this={titleElement}>Flip Phone</h1>
+  <div style:display={orientationPermission ? "none" : null }>
+    <Button on:click={handleStartClick}>Start</Button>
+    <p>{errorMessage}</p>
   </div>
-{/if}
-
+  <p bind:this={scoreContainer} class="score-container score-animation" data-diff={diff ? "+" + diff : null }
+     style:display={orientationPermission ? null : "none" }>
+    {score} <span bind:this={infoElement}>flips</span>
+  </p>
+</div>
 <style>
   .home {
     display: grid;
     align-items: center;
     height: 100vh;
+    transform: scale(var(--random-zoom)) rotate(var(--random-rotate)) translate(var(--random-translate-x), var(--random-translate-y));
+    color: var(--random-color);
     justify-items: center;
-    grid-template: 1fr 1fr / 1fr;
+    grid-template: repeat(2, 1fr) / 1fr;
+
+  }
+
+  h1 {
+    transform: rotate(var(--random-rotate));
+  }
+
+  .score-container {
+    font-size: 5rem;
+    position: relative;
+    display: flex;
+    align-self: flex-start;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .score-animation {
+    --random-plus-rotate: 0;
+  }
+
+  .score-animation::before {
+    font-size: 3rem;
+    position: absolute;
+    display: block;
+    content: attr(data-diff);
+    animation: score-animation 1s ease;
+  }
+
+  .score-container span {
+    font-size: 2rem;
+  }
+
+  @keyframes score-animation {
+    0% {
+      transform: rotate(var(--random-plus-rotate)) translateY(0);
+      opacity: 0
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      transform: rotate(var(--random-plus-rotate)) translateY(-100%);
+      opacity: 0;
+    }
   }
 </style>
