@@ -1,16 +1,18 @@
 <script>
 	import Button from "$lib/components/Button.svelte"
 	import deviceOrientationPermission from "$lib/functions/deviceOrientationPermission.js"
-	import handleOrientation, { getScore } from "$lib/functions/flipCounter.js"
-	import { onDestroy } from "svelte"
+	import handleOrientation, { getOrientation, getScore } from "$lib/functions/flipCounter.js"
+	import { onDestroy, onMount } from "svelte"
 
 	let errorMessage = ""
 	let orientationPermission = false
 	let score = 0
 	let diff = 0
+	let userAlpha = 0
 	let scoreContainer = null
 	let titleElement = null
 	let infoElement = null
+	let orientationTesterElement = null
 	let getScoreInterval = null
 
 	let randomColorAnimationStarted = false
@@ -100,14 +102,14 @@
 
 	function randomZoom () {
 		setInterval(() => {
-			const randomZoom = Math.random() * 3
+			const randomZoom = Math.random() * 2
 			document.documentElement.style.setProperty("--random-zoom", randomZoom.toString())
 		}, 400)
 	}
 
 	function randomRotate () {
 		setInterval(() => {
-			const randomRotate = Math.floor(Math.random() * 60) - 30
+			const randomRotate = Math.floor(Math.random() * 40) - 20
 			document.documentElement.style.setProperty("--random-rotate", randomRotate + "deg")
 		}, 200)
 	}
@@ -122,7 +124,6 @@
 	}
 
 	function randomBackground () {
-		// random gradient background
 		setInterval(() => {
 			const randomColor1 = Math.floor(Math.random() * 16777215).toString(16)
 			const randomColor2 = Math.floor(Math.random() * 16777215).toString(16)
@@ -138,27 +139,36 @@
 	}
 
 	function init () {
-		//request fullscreen on iphone
-		// document.documentElement.webkitRequestFullscreen()
-		// document.documentElement.requestFullscreen()
-    if (document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen()
-    } else if (document.documentElement.mozRequestFullScreen) { /* Firefox */
-      document.documentElement.mozRequestFullScreen()
-    } else if (document.documentElement.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
-      document.documentElement.webkitRequestFullscreen()
-    } else if (document.documentElement.msRequestFullscreen) { /* IE/Edge */
-      document.documentElement.msRequestFullscreen()
-    }
+		if (document.documentElement.requestFullscreen) {
+			document.documentElement.requestFullscreen()
+		} else if (document.documentElement.mozRequestFullScreen) { /* Firefox */
+			document.documentElement.mozRequestFullScreen()
+		} else if (document.documentElement.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+			document.documentElement.webkitRequestFullscreen()
+		} else if (document.documentElement.msRequestFullscreen) { /* IE/Edge */
+			document.documentElement.msRequestFullscreen()
+		}
 
 		addEventListener("touchstart", preventZoom, { passive: false })
 		orientationPermission = true
+		userAlpha = getOrientation().alpha
 
 		document.documentElement.style.setProperty("--random-rotate", "0deg")
 		document.documentElement.style.setProperty("--random-zoom", "1")
 		document.documentElement.style.setProperty("--random-translate-x", "0px")
 		document.documentElement.style.setProperty("--random-translate-y", "0px")
 	}
+
+	function tick () {
+		requestAnimationFrame(tick)
+		const { alpha, beta, gamma } = getOrientation()
+
+		orientationTesterElement.style.transform = `translateX(${gamma * 2}px) translateY(${beta * 2}px) rotate(${alpha - userAlpha}deg)`
+	}
+
+	onMount(() => {
+		tick()
+	})
 
 	onDestroy(() => {
 		clearInterval(getScoreInterval)
@@ -167,7 +177,10 @@
 </script>
 
 <div class="home">
-  <h1 bind:this={titleElement}>Flip Phone</h1>
+  <div class="title-container">
+    <h1 bind:this={titleElement}>Flip Phone</h1>
+    <div bind:this={orientationTesterElement} class="orientation-tester"></div>
+  </div>
   <div style:display={orientationPermission ? "none" : null }>
     <Button on:click={handleStartClick}>Start</Button>
     <p>{errorMessage}</p>
@@ -177,6 +190,7 @@
     {score} <span bind:this={infoElement}>flips</span>
   </p>
 </div>
+
 <style>
   .home {
     display: grid;
@@ -186,10 +200,12 @@
     color: var(--random-color);
     justify-items: center;
     grid-template: repeat(2, 1fr) / 1fr;
+    will-change: transform;
 
   }
 
-  h1 {
+  .title-container {
+    position: relative;
     transform: rotate(var(--random-rotate));
   }
 
@@ -216,6 +232,17 @@
 
   .score-container span {
     font-size: 2rem;
+  }
+
+  .orientation-tester {
+    position: absolute;
+    z-index: -1;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background: black;
+    will-change: transform;
   }
 
   @keyframes score-animation {

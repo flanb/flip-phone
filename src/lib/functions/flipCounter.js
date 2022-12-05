@@ -3,7 +3,9 @@ let score = 0;
 let isFlat = true;
 let setScoreTimeout = null;
 let stopScoringTimeout = null;
+let alpha = 0;
 let beta = 0;
+let gamma = 0;
 
 function setScore() {
   score += flipCount;
@@ -28,12 +30,19 @@ function handleStopFlip() {
 export function getScore() {
   return score;
 }
-export function getBeta() {
-  return beta;
+
+export function getOrientation() {
+  return {
+    alpha,
+    beta,
+    gamma,
+  };
 }
 
 export default function handleOrientation(event) {
+  alpha = event.alpha;
   beta = event.beta;
+  gamma = event.gamma;
 
   if ((beta >= 160 || beta <= -160) && isFlat) {
     handleFlip();
